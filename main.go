@@ -6,6 +6,8 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,6 +28,25 @@ func hex(hexInt int) color.Color {
 }
 
 func main() {
+	if _, err := os.Stat("data.csv"); err != nil {
+		fmt.Println("Downloading data...")
+		res, err := http.Get("https://storage.googleapis.com/justin_bassett/place_tiles")
+		if err != nil {
+			panic(err)
+		}
+
+		if res.StatusCode != 200 {
+			panic(fmt.Sprintf("Status code: %d", res.StatusCode))
+		}
+
+		file, err := os.Create("data.csv")
+		if err != nil {
+			panic(err)
+		}
+
+		io.Copy(file, res.Body)
+	}
+
 	os.RemoveAll("frames")
 	os.Mkdir("frames", os.ModePerm)
 
@@ -48,7 +69,7 @@ func main() {
 		hex(0x820080), // 15
 	}
 
-	file, err := os.Open(filepath.Join("data", "place_tiles"))
+	file, err := os.Open("data.csv")
 	if err != nil {
 		panic(err)
 	}
